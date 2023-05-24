@@ -39,6 +39,7 @@ void ARtsCamera::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARtsCamera::Move);
 		EnhancedInputComponent->BindAction(RotateAction, ETriggerEvent::Triggered, this, &ARtsCamera::Rotate);
 		EnhancedInputComponent->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &ARtsCamera::Zoom);
+		EnhancedInputComponent->BindAction(MiddleClickRotateAction, ETriggerEvent::Triggered, this, &ARtsCamera::RotateWithMousePosition);
 	}
 }
 // Called every frame
@@ -72,12 +73,66 @@ void ARtsCamera::Rotate(const FInputActionValue& value)
 {
 	const float rotateValue = value.Get<float>();
 
-	if (rotateValue)
+	if (GetController())
 	{
 		AController* controller = GetController();
-		FRotator rotator(0, controller->GetControlRotation().Yaw + rotateValue, 0);
+		FRotator rotator(controller->GetControlRotation().Pitch, controller->GetControlRotation().Yaw + rotateValue, controller->GetControlRotation().Roll);
 
 		controller->SetControlRotation(rotator);
+	}
+}
+
+/// <summary>
+///	Check if making a rotation by pitchRotation will go beyond the 
+/// </summary>
+/// <param name="pitchRotation"></param>
+/// <returns></returns>
+bool ARtsCamera::CanRotatePitch(double pitchToRotateBy)
+{
+	FRotator controllerRotation = GetController()->GetControlRotation();
+	
+	// rotates down
+	if (pitchToRotateBy < 0)
+	{
+		if (controllerRotation.Pitch - pitchToRotateBy >= 50.0f)
+		{
+			return false;
+		}
+	}
+	// rotates up
+	else if (pitchToRotateBy > 0)
+	{
+		if (controllerRotation.Pitch - pitchToRotateBy <= 0.0f)
+		{
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+void ARtsCamera::RotateWithMousePosition(const FInputActionValue& value)
+{
+	const FVector2D rotateValue = value.Get<FVector2D>();
+
+	if (AController* controller = GetController())
+	{
+		FRotator rotation = GetController()->GetControlRotation();
+		AddControllerYawInput(rotateValue.X);
+
+		if (CanRotatePitch(rotateValue.Y))
+		{
+			double lastRotation = rotation.Pitch;
+			AddControllerPitchInput(rotateValue.Y);
+			double newRotation = rotation.Pitch;
+
+			// this is a nice safeguard because sometimes rotating below 0 will set rotation to 360, and this messes up calculations
+			if (newRotation > 51.0f)
+			{
+				FRotator rotator(0.0f, controller->GetControlRotation().Yaw, controller->GetControlRotation().Roll);
+				controller->SetControlRotation(rotator);
+			}
+		}
 	}
 }
 

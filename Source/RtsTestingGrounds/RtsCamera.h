@@ -17,9 +17,11 @@ class ARtsCamera : public ACharacter
 {
 	GENERATED_BODY()
 
+
 public:
 	// Sets default values for this pawn's properties
 	ARtsCamera();
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -36,15 +38,23 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 		UInputAction* ZoomAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+		UInputAction* MiddleClickRotateAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 		float zoomSpeed;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 		float closestZoomValue;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 		float furthestZoomValue;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+		bool invertCameraYAxisControls;
 	
 	void Move(const FInputActionValue& value);
 	void Rotate(const FInputActionValue& value);
+	void RotateWithMousePosition(const FInputActionValue& value);
 	void Zoom(const FInputActionValue& value);
+
+	bool CanRotatePitch(double pitchRotation);
+
 #pragma endregion
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
@@ -55,5 +65,4 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 };
